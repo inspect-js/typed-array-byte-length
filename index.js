@@ -1,14 +1,15 @@
 'use strict';
 
-var forEach = require('for-each');
 var callBind = require('call-bind');
+var forEach = require('for-each');
+var gOPD = require('gopd');
+var hasProto = require('has-proto')();
+var isTypedArray = require('is-typed-array');
 
 var typedArrays = require('available-typed-arrays')();
 
 var getters = {};
-var hasProto = require('has-proto')();
 
-var gOPD = Object.getOwnPropertyDescriptor;
 var oDP = Object.defineProperty;
 if (gOPD) {
 	var getByteLength = function (x) {
@@ -55,8 +56,6 @@ var tryTypedArrays = function tryAllTypedArrays(value) {
 	});
 	return foundByteLength;
 };
-
-var isTypedArray = require('is-typed-array');
 
 module.exports = function typedArrayByteLength(value) {
 	if (!isTypedArray(value)) {
