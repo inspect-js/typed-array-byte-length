@@ -8,10 +8,16 @@ var isTypedArray = require('is-typed-array');
 
 var typedArrays = require('available-typed-arrays')();
 
+/** @typedef {Int8Array | Uint8Array | Uint8ClampedArray | Int16Array | Uint16Array | Int32Array | Uint32Array | Float32Array | Float64Array | BigInt64Array | BigUint64Array} TypedArray */
+/** @typedef {import('possible-typed-array-names')[number]} TypedArrayNames */
+/** @typedef {(value: TypedArray) => number} Getter */
+
+/** @type {Object.<TypedArrayNames, Getter>} */
 var getters = {};
 
 var oDP = Object.defineProperty;
 if (gOPD) {
+	/** @type {Getter} */
 	var getByteLength = function (x) {
 		return x.byteLength;
 	};
@@ -19,9 +25,12 @@ if (gOPD) {
 		// In Safari 7, Typed Array constructors are typeof object
 		if (typeof global[typedArray] === 'function' || typeof global[typedArray] === 'object') {
 			var Proto = global[typedArray].prototype;
+			// @ts-expect-error TS doesn't narrow properly inside callbacks
 			var descriptor = gOPD(Proto, 'byteLength');
 			if (!descriptor && hasProto) {
+				// @ts-expect-error hush, TS, every object has a dunder proto
 				var superProto = Proto.__proto__; // eslint-disable-line no-proto
+				// @ts-expect-error TS doesn't narrow properly inside callbacks
 				descriptor = gOPD(superProto, 'byteLength');
 			}
 			// Opera 12.16 has a magic byteLength data property on instances AND on Proto
@@ -30,6 +39,7 @@ if (gOPD) {
 			} else if (oDP) {
 				// this is likely an engine where instances have a magic byteLength data property
 				var arr = new global[typedArray](2);
+				// @ts-expect-error TS doesn't narrow properly inside callbacks
 				descriptor = gOPD(arr, 'byteLength');
 				if (descriptor && descriptor.configurable) {
 					oDP(arr, 'length', { value: 3 });
@@ -42,9 +52,10 @@ if (gOPD) {
 	});
 }
 
+/** @type {Getter} */
 var tryTypedArrays = function tryAllTypedArrays(value) {
-	var foundByteLength;
-	forEach(getters, function (getter) {
+	/** @type {number} */ var foundByteLength;
+	forEach(getters, /** @type {(getter: Getter) => void} */ function (getter) {
 		if (typeof foundByteLength !== 'number') {
 			try {
 				var byteLength = getter(value);
@@ -54,9 +65,11 @@ var tryTypedArrays = function tryAllTypedArrays(value) {
 			} catch (e) {}
 		}
 	});
+	// @ts-expect-error TS can't guarantee the callback is invoked sync
 	return foundByteLength;
 };
 
+/** @type {import('.')} */
 module.exports = function typedArrayByteLength(value) {
 	if (!isTypedArray(value)) {
 		return false;
